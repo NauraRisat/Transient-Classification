@@ -1,0 +1,41 @@
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+
+class feature_generator(nn.Module):
+    def __init__(self,configs):
+        super(feature_generator, self).__init__()
+        self.configs = configs
+        self.conv1 = nn.Conv3d(in_channels=2,
+                               out_channels=32,
+                               kernel_size=(11,11,3),
+                               stride=2,
+                               padding=2)
+        self.conv2 = nn.Conv3d(in_channels=32,
+                               out_channels=64,
+                               kernel_size=(5,5,3),
+                               stride=1,
+                               padding=2)
+        self.conv3 = nn.Conv3d(in_channels=64,
+                               out_channels=32,
+                               kernel_size=(3,3,3),
+                               stride=1,
+                               padding=0)
+        self.conv4 = nn.Conv3d(in_channels=32,
+                               out_channels=configs[1],
+                               kernel_size=(3,3,3),
+                               stride=1,
+                               padding=0)
+        self.bn1 = nn.BatchNorm3d(32)
+        self.bn2 = nn.BatchNorm3d(64)
+        self.bn3 = nn.BatchNorm3d(32)
+        self.bn4 = nn.BatchNorm3d(configs[1])
+        self.drop = nn.Dropout3d(p=0.1)
+
+    def forward(self, x):
+        out = F.relu(self.bn1(self.conv1(x)), inplace=False)
+        out = self.drop(F.relu(self.bn2(self.conv2(out)), inplace=False))
+        out = self.drop(F.relu(self.bn3(self.conv3(out)), inplace=False))
+        out = F.relu(self.bn4(self.conv4(out)), inplace=False)
+        return out
